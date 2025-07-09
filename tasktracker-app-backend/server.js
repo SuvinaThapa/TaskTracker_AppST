@@ -1,8 +1,11 @@
 const express=require('express');
 const app=express();
 const cors=require('cors');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const users = require('./users.js');
 const PORT = 5000;
-
+const JWT_SECRET = 'mysecretkey123'; //Hardcoded JWT secret for now
 app.use(cors());
 app.use(express.json());
 
@@ -40,4 +43,19 @@ app.post('/api/tasks', (req,res) =>{
 
 app.listen(PORT, ()=>{
     console.log(`Server is running on http://localhost:${PORT}`);
+});
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  //find function can only be use in array
+  const user = users.find((u) => u.email === email);
+
+  if (!user || !bcrypt.compareSync(password, user.password)) {
+    return res.status(401).json({ message: 'Wrong email or password' });
+  }
+
+  const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+    expiresIn: '15m',
+  });
+
+  res.json({ token, message: 'Login successful' });
 });
