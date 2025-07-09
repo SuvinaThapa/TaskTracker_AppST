@@ -1,22 +1,19 @@
-
 import { useState, useEffect } from "react";
 import { fetchTasks, addTask } from "./api/task";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Button from "./components/Button";
-import TaskList from "./components/TaskList"; // New component
+import TaskList from "./components/TaskList";
 
-//[variable,function] is called hook
 function App() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingTaskId, setEditingTaskId] = useState(null); // NEW
 
-  // Fetch tasks
-  //fetch tasks from backend on componenets mount
-//reload hune betekai chalne hook is useeffect
+  // Fetch tasks on component mount
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -34,25 +31,45 @@ function App() {
     initializeApp();
   }, []);
 
-//Add new task
-  const handleAddTask = async () => {
+  // Add or Update task
+  const handleSubmitTask = async () => {
     if (!newTask.trim()) return;
     try {
-      const addedTask = await addTask(newTask);
-      setTasks([...tasks, addedTask]);
+      if (editingTaskId) {
+        const updatedTasks = tasks.map((task) =>
+          task.id === editingTaskId ? { ...task, text: newTask } : task
+        );
+        setTasks(updatedTasks);
+        setEditingTaskId(null);
+      } else {
+        const addedTask = await addTask(newTask);
+        setTasks([...tasks, addedTask]);
+      }
       setNewTask("");
     } catch (err) {
       setError(err.message);
     }
   };
 
-  const deleteTask = (id) => {
-    if (tasks.find((task) => task.id === id && task.completed))
-      // Check if the task is completed
-      setTasks(tasks.filter((task) => task.id !== id));
-    else alert("Task not completed yet! Please complete it before deleting.");
+  // Start editing
+  const handleEditTask = (id) => {
+    const taskToEdit = tasks.find((task) => task.id === id);
+    if (taskToEdit) {
+      setNewTask(taskToEdit.text);
+      setEditingTaskId(id);
+    }
   };
 
+  // Delete a completed task
+  const deleteTask = (id) => {
+    if (tasks.find((task) => task.id === id && task.completed)) {
+      setTasks(tasks.filter((task) => task.id !== id));
+    } else {
+      alert("Task not completed yet! Please complete it before deleting.");
+    }
+  };
+
+  // Toggle task completion
   const toggleComplete = (id) => {
     setTasks(
       tasks.map((task) =>
@@ -81,18 +98,21 @@ function App() {
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
             className="flex-grow p-2 border rounded-l focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter new task..."
+            placeholder="Enter task..."
           />
-
-          <Button type="add" onClick={handleAddTask} />
+          <Button
+            type={editingTaskId ? "update" : "add"}
+            onClick={handleSubmitTask}
+          />
         </div>
+
         <TaskList
           tasks={tasks}
           onDelete={deleteTask}
           onToggleComplete={toggleComplete}
+          onEdit={handleEditTask}
         />
       </main>
-
       <Footer />
     </div>
   );
