@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+
 const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -6,7 +7,6 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', UserSchema);
-
 // const users = [...] // Hardcoded array
 // app.post("/api/auth/login", (req, res) => {
 // // Array find logic
